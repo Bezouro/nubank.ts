@@ -14,7 +14,7 @@ const client = Axios.create({
   baseURL: 'https://prod-s0-webapp-proxy.nubank.com.br/api/',
   headers: {
     'Content-Type': 'application/json',
-    'X-Correlation-Id': 'WEB-APP.pewW9',
+    'X-Correlation-Id': 'and-7-0-0',
     'User-Agent': 'nubank.js',
   },
 });

@@ -1,6 +1,6 @@
 import INubankQueryObject from '../interfaces/INubankQuery';
 
-export default function (limit: string): INubankQueryObject {
+export default function (limit: number): INubankQueryObject {
   const query = `
     {
       viewer {

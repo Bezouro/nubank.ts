@@ -35,7 +35,6 @@ export default function (pixKey: string): INubankQueryObject {
       dictInput: {
         dictKey: pixKey,
       },
-      //manualInput: null,
     },
   };
 

@@ -10,7 +10,9 @@ import generatePixQr from './queries/generatePixQr';
 import getContactAccounts from './queries/getContactAccounts';
 import getContacts from './queries/getContacts';
 import getPhoneRechargeDetails from './queries/getPhoneRechargeDetails';
+import getPixAliases from './queries/getPixAliases';
 import getTransferInDetails from './queries/getTransferInDetails';
+import nubankJsSetup from './queries/nubankJsSetup';
 import transferOut from './queries/transferOut';
 import transferOutInit from './queries/transferOutInit';
 import INubankQueryObject from './interfaces/INubankQuery';
@@ -18,7 +20,7 @@ import Discovery from './utils/discovery';
 
 const BASE_HEADERS = {
   'Content-Type': 'application/json',
-  'X-Correlation-Id': 'WEB-APP.pewW9',
+  'X-Correlation-Id': 'and-7-0-0',
   'User-Agent': 'nubank.js'
 };
 
@@ -29,6 +31,21 @@ interface INubankJS {
   client: AxiosInstance;
 }
 
+interface IAccountOwner {
+  name: string,
+  id: string,
+  savingsAccount: {
+    id: string,
+    dict: { 
+      keys: [
+        {
+          id: string,
+          value: string,
+        }
+      ] 
+    }
+  }
+}
 export default class NubankJS implements INubankJS {
 
   readonly NUBANK_TRANSFERAUTH_HOST = 'https://prod-s4-piv.nubank.com.br/';
@@ -39,7 +56,7 @@ export default class NubankJS implements INubankJS {
   certificate: Buffer;
   client: AxiosInstance;
   discovery: Discovery;
-  accountId: string;
+  me: IAccountOwner;
 
   constructor(user: string, password: string, certificate: Buffer) {
     this.user = user;
@@ -53,10 +70,12 @@ export default class NubankJS implements INubankJS {
     });
 
     this.discovery = new Discovery(this.client);
-    
-    this.getAccountId().then(({data}) => {
-      this.accountId = data.id;
-    });
+    this.loadMe();
+  }
+
+  async loadMe() {
+    const { data } = await this.GraphQLRequest(nubankJsSetup());
+    this.me = data;
   }
 
   async getBearerToken() {
@@ -130,7 +149,7 @@ export default class NubankJS implements INubankJS {
     return await this.GraphQLRequest(addPixContact(pixKey));
   }
 
-  async checkFeed(limit: string) {
+  async checkFeed(limit: number) {
     return await this.GraphQLRequest(checkFeed(limit));
   }
 
@@ -138,8 +157,16 @@ export default class NubankJS implements INubankJS {
     return await this.GraphQLRequest(feedItems(cursor));
   }
 
-  async generatePixQr(amount: number, transactionId: string, message: string) {
-    return await this.GraphQLRequest(generatePixQr(amount, transactionId, message));
+  async generatePixQr(amount: number, transactionId: string, message: string, pixAlias?: string) {
+    if(!this.me) await this.loadMe();
+
+    if (!this.me.savingsAccount.id) throw new Error('No savings account found');
+    if (!this.me.savingsAccount.dict.keys.length) throw new Error('No PIX keys found');
+    if (pixAlias && !this.me.savingsAccount.dict.keys.findIndex(key => key.value === pixAlias)) throw new Error('PIX key not found');
+
+    const pixKey = pixAlias || this.me.savingsAccount.dict.keys[0].value;
+
+    return await this.GraphQLRequest(generatePixQr(amount, transactionId, message, pixKey, this.me.savingsAccount.id));
   }
 
   async getContactAccounts(contactID: string) {
@@ -152,6 +179,10 @@ export default class NubankJS implements INubankJS {
 
   async getPhoneRechargeDetails(phoneRechargeRequestId: string) {
     return await this.GraphQLRequest(getPhoneRechargeDetails(phoneRechargeRequestId));
+  }
+
+  async getPixAliases() {
+    return await this.GraphQLRequest(getPixAliases());
   }
 
   async getTransferInDetails(id: string) {
@@ -170,18 +201,14 @@ export default class NubankJS implements INubankJS {
     }
   }
 
-  async transferOutPix(account: string, value: number) {
+  async transferOutPix(account: string, value: number, cardPassword: string) {
+    if(!this.me) await this.loadMe();
     let response = await this.transferOutInit(account, value);
     const proof = response.headers['www-authenticate'].substring(18, 458);
 
-    if(!this.accountId) {
-      const { data } = await this.getAccountId();
-      this.accountId = data.id;
-    }
-  
-    response = await this.NubankPostRequest(`${this.NUBANK_TRANSFERAUTH_HOST}api/customers/${this.accountId}/unencrypted-lift`, {
+    response = await this.NubankPostRequest(`${this.NUBANK_TRANSFERAUTH_HOST}api/customers/${this.me.id}/unencrypted-lift`, {
       acl: [],
-      input: String(process.env.NUBANK_CARD_PASSWORD),
+      input: cardPassword,
       proof
     });
   

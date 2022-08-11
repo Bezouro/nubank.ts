@@ -4,9 +4,16 @@ export default function (): INubankQueryObject {
   const query = `
     {
       viewer {
+        name
         id
         savingsAccount {
           id
+          dict {
+            keys(onlyActive: true) {
+              id
+              value
+            }
+          }
         }
       }
     }
