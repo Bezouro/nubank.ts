@@ -54,7 +54,7 @@ export default class CertificateGenerator {
       headers: {
         'Content-Type': 'application/json',
         'X-Correlation-Id': 'and-7-0-0',
-        'User-Agent': 'nubank.js',
+        'User-Agent': 'nubank.ts',
       },
     });
 
@@ -160,7 +160,7 @@ export default class CertificateGenerator {
       password: this.password,
       public_key: this.serializePublicKey(this.key1),
       public_key_crypto: this.serializePublicKey(this.key2),
-      model: `Nubank.JS (${this.device_id})`,
+      model: `Nubank.TS (${this.device_id})`,
       device_id: this.device_id
     };
   }

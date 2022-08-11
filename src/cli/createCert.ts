@@ -15,7 +15,7 @@ const client = Axios.create({
   headers: {
     'Content-Type': 'application/json',
     'X-Correlation-Id': 'and-7-0-0',
-    'User-Agent': 'nubank.js',
+    'User-Agent': 'nubank.ts',
   },
 });
 
@@ -31,7 +31,7 @@ function saveCert(cert: asn1.Asn1, name: string) {
 
 export default async function run() {
   try {
-    console.log('Starting Nubank.JS certificate creation...');
+    console.log('Starting Nubank.TS certificate creation...');
 
     const discovery = new Discovery(client);
     await discovery.updateProxyUrls();

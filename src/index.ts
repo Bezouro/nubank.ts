@@ -21,10 +21,10 @@ import Discovery from './utils/discovery';
 const BASE_HEADERS = {
   'Content-Type': 'application/json',
   'X-Correlation-Id': 'and-7-0-0',
-  'User-Agent': 'nubank.js'
+  'User-Agent': 'nubank.ts'
 };
 
-interface INubankJS {
+interface INubankTS {
   user: string;
   password: string;
   certificate: Buffer;
@@ -46,7 +46,7 @@ interface IAccountOwner {
     }
   }
 }
-export default class NubankJS implements INubankJS {
+export default class NubankTS implements INubankTS {
 
   readonly NUBANK_TRANSFERAUTH_HOST = 'https://prod-s4-piv.nubank.com.br/';
 
