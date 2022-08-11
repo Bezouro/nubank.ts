@@ -5,7 +5,7 @@ import CreateCert from './createCert';
 const args = process.argv.slice(2);
 
 if (args.length === 0) {
-  console.log('Usage: nubankjs <command>');
+  console.log('Usage: nubankts <command>');
   console.log('Commands:');
   console.log('  create-cert');
   process.exit(0);

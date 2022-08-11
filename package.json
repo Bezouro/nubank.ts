@@ -15,7 +15,7 @@
     "patch-release": "npm run build && npm version patch && npm publish --access=public"
   },
   "bin": {
-    "nubankjs": "./dist/cli/index.js"
+    "nubankts": "./dist/cli/index.js"
   },
   "dependencies": {
     "axios": "^0.26.1",

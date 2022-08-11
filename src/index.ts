@@ -12,7 +12,7 @@ import getContacts from './queries/getContacts';
 import getPhoneRechargeDetails from './queries/getPhoneRechargeDetails';
 import getPixAliases from './queries/getPixAliases';
 import getTransferInDetails from './queries/getTransferInDetails';
-import nubankJsSetup from './queries/nubankJsSetup';
+import nubankSetup from './queries/nubankSetup';
 import transferOut from './queries/transferOut';
 import transferOutInit from './queries/transferOutInit';
 import INubankQueryObject from './interfaces/INubankQuery';
@@ -74,7 +74,7 @@ export default class NubankTS implements INubankTS {
   }
 
   async loadMe() {
-    const { data } = await this.GraphQLRequest(nubankJsSetup());
+    const { data } = await this.GraphQLRequest(nubankSetup());
     this.me = data;
   }
 
