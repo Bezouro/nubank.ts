@@ -15,7 +15,20 @@ yarn: `yarn add nubank.ts`
 Para gerar o certificado necessario para autenticar com o nubank, após adicionar o modulo como dependencia do seu projeto execute o seguinte comando
 `yarn run nubankts create-cert` e siga o passo a passo, como resultado você terá um certificado `cert.p12` na pasta atual
 
->AVISO: tome cuidado com o certificado, usuario e senha da sua conta, não commite-os no github
+>⚠️ AVISO ⚠️: tome cuidado com o certificado, usuario e senha da sua conta, não commite-os no github
+>Recomendo transformar seu certificado em uma string base64, e armazena-lo no .env, o codigo a seguir mostra como obter o base64, e como utilizar
+```typescript
+// Transforma o certificado em uma string base64
+const cert: string = fs.readFileSync(path.join(__dirname, 'cert.p12'), { encoding: 'base64' });
+
+// Exibe o base64 no console para que você possa copiar o conteúdo e colocar no .env
+console.log(cert)
+
+// No seu código, utilize o certificado desta forma:
+const certificate = Buffer.from(process.env.NUBANK_CERTIFICATE || '', 'base64');
+const nubank = new Nubank(USERNAME, PASSWORD, certificate);
+```
+
 # Exemplo de uso
 Você pode encontrar mais exemplos [Aqui](/examples/)
 
