@@ -14,11 +14,11 @@ if (args.length === 0) {
 const command = args.shift();
 
 switch (command) {
-  case 'create-cert':
-    CreateCert();
-    break;
+case 'create-cert':
+  CreateCert();
+  break;
 
-  default:
-    console.log('Unknown command:', command);
-    process.exit(1);
+default:
+  console.log('Unknown command:', command);
+  process.exit(1);
 }

@@ -3,6 +3,7 @@ import fs from 'fs';
 import { IncomingMessage } from 'http';
 import Forge, { asn1, pki } from 'node-forge';
 import Discovery from './discovery';
+import { parseWwwAuthHeader } from './utils';
 
 interface IPayload {
   login: string,
@@ -115,11 +116,17 @@ export default class CertificateGenerator {
           throw new Error('Authentication code request failed.');
         }
 
-        const parsed = this.parseAuthenticateHeaders(response.headers['www-authenticate'] as string);
+        interface IEncryptedCodeHeader {
+          expiresAt: string;
+          deviceAuthorizationEncryptedCode: string;
+          sentTo: string;
+        }
+
+        const parsed = parseWwwAuthHeader<IEncryptedCodeHeader>(response.headers['www-authenticate'] as string);
         this.codeSentAt = new Date();
-        this.expiresAt = new Date(parsed['expires-at']);
-        this.encrypted_code = parsed['device-authorization_encrypted-code'];
-        this.partialEmail = parsed['sent-to'];
+        this.expiresAt = new Date(parsed.expiresAt);
+        this.encrypted_code = parsed.deviceAuthorizationEncryptedCode;
+        this.partialEmail = parsed.sentTo;
         this.saveState();
       }
 
@@ -192,16 +199,4 @@ export default class CertificateGenerator {
     return { publicKey, privateKey };
   }
 
-  parseAuthenticateHeaders(headers: string) {
-    const chunks = headers.split(',');
-    const parsed: { [key:string]: string } = {};
-    for (const chunk of chunks) {
-      let [key, value] = chunk.split('=');
-      key = key.trim().split(' ').join('_');
-      value = value.split('"').join('');
-      parsed[key] = value;
-    }
-
-    return parsed;
-  }
 }
