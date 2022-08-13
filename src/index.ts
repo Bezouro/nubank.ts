@@ -1,5 +1,5 @@
 import https from 'https';
-import axios, { AxiosInstance } from 'axios';
+import axios, { AxiosInstance, AxiosResponseHeaders } from 'axios';
 import INubankQueryObject from './interfaces/INubankQuery';
 import Discovery from './utils/discovery';
 import { parseWwwAuthHeader } from './utils/utils';
@@ -19,6 +19,8 @@ import {
   transferOut,
   transferOutInit
 } from './queries';
+import IFeedItems from './interfaces/IFeedItems';
+import ITransferInDetails from './interfaces/ITransferInDetails';
 
 const BASE_HEADERS = {
   'Content-Type': 'application/json',
@@ -55,6 +57,11 @@ interface ITransferAuthProof {
   location?: string;
 }
 
+interface IGraphQLResponse<T> {
+  headers: AxiosResponseHeaders,
+  data: T
+}
+
 export default class NubankTS implements INubankTS {
 
   readonly NUBANK_TRANSFERAUTH_HOST = 'https://prod-s4-piv.nubank.com.br/';
@@ -83,7 +90,7 @@ export default class NubankTS implements INubankTS {
   }
 
   async loadMe() {
-    const { data } = await this.graphQLRequest(nubankSetup());
+    const { data } = await this.graphQLRequest<IAccountOwner>(nubankSetup());
     this.me = data;
   }
 
@@ -107,7 +114,7 @@ export default class NubankTS implements INubankTS {
     return this.token;
   }
 
-  async graphQLRequest(query: INubankQueryObject, bearerToken?: string) {
+  async graphQLRequest<T>(query: INubankQueryObject, bearerToken?: string): Promise<IGraphQLResponse<T>> {
     const Authorization = bearerToken ? `Bearer ${bearerToken}` : await this.getBearerToken();
     const { data, path } = query;
 
@@ -147,7 +154,7 @@ export default class NubankTS implements INubankTS {
   }
 
   async accountBalance() {
-    return await this.graphQLRequest(accountBalance());
+    return await this.graphQLRequest<number>(accountBalance());
   }
 
   async getAccountId() {
@@ -163,7 +170,7 @@ export default class NubankTS implements INubankTS {
   }
 
   async feedItems(cursor?: string) {
-    return await this.graphQLRequest(feedItems(cursor));
+    return await this.graphQLRequest<IFeedItems>(feedItems(cursor));
   }
 
   async generatePixQr(amount: number, transactionId: string, message: string, pixAlias?: string) {
@@ -195,7 +202,7 @@ export default class NubankTS implements INubankTS {
   }
 
   async getTransferInDetails(id: string) {
-    return await this.graphQLRequest(getTransferInDetails(id));
+    return await this.graphQLRequest<ITransferInDetails>(getTransferInDetails(id));
   }
 
   async rawTransferOut(bankAccountId: string, amount: number, bearerToken: string) {
