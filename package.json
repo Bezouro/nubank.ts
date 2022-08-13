@@ -13,7 +13,7 @@
     "test": "jest --coverage",
     "example": "nodemon -r dotenv/config examples/receivePixTransfer.ts",
     "cli": "nodemon -r dotenv/config src/cli/index.ts",
-    "patch-release": "npm run build && npm version patch && npm publish --access=public"
+    "patch-release": "npm run build && npm version patch"
   },
   "bin": {
     "nubankts": "./dist/cli/index.js"
