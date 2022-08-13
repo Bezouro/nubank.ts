@@ -1,5 +1,5 @@
 import https from 'https';
-import axios, { AxiosInstance, AxiosResponseHeaders } from 'axios';
+import axios, { AxiosInstance } from 'axios';
 import INubankQueryObject from './interfaces/INubankQuery';
 import Discovery from './utils/discovery';
 import { parseWwwAuthHeader } from './utils/utils';
@@ -21,6 +21,11 @@ import {
 } from './queries';
 import IFeedItems from './interfaces/IFeedItems';
 import ITransferInDetails from './interfaces/ITransferInDetails';
+import IGraphQLResponse from './interfaces/IGraphQLRequest';
+import { ITransferOutRequestSuccess } from './interfaces/ITransferOut';
+import IPixAddedContact, { IContact, IContactAccountList } from './interfaces/IContacts';
+import INuAccountID, { IPixAlias } from './interfaces/IAccount';
+import IPaymentRequest from './interfaces/IPaymentRequest';
 
 const BASE_HEADERS = {
   'Content-Type': 'application/json',
@@ -55,11 +60,6 @@ interface ITransferAuthProof {
   certificatePendingValidationUrl?: string,
   verifyPinProof?: string;
   location?: string;
-}
-
-interface IGraphQLResponse<T> {
-  headers: AxiosResponseHeaders,
-  data: T
 }
 
 export default class NubankTS implements INubankTS {
@@ -135,7 +135,9 @@ export default class NubankTS implements INubankTS {
       request.data = request.data[key];
     }
 
-    return { headers: request.headers, data: request.data };
+    const keyName = request.data.__typename === 'RequestError' ? 'error' : 'data';
+
+    return { headers: request.headers, [keyName]: request.data };
   }
 
   async NubankPostRequest(url: string, body: unknown) {
@@ -158,14 +160,14 @@ export default class NubankTS implements INubankTS {
   }
 
   async getAccountId() {
-    return await this.graphQLRequest(getAccountId());
+    return await this.graphQLRequest<INuAccountID>(getAccountId());
   }
 
   async addPixContact(pixKey: string) {
-    return await this.graphQLRequest(addPixContact(pixKey));
+    return await this.graphQLRequest<IPixAddedContact>(addPixContact(pixKey));
   }
 
-  async checkFeed(limit: number) {
+  async checkFeed(limit: number) { // TODO: add return type
     return await this.graphQLRequest(checkFeed(limit));
   }
 
@@ -182,23 +184,23 @@ export default class NubankTS implements INubankTS {
 
     const pixKey = pixAlias || this.me.savingsAccount.dict.keys[0].value;
 
-    return await this.graphQLRequest(generatePixQr(amount, transactionId, message, pixKey, this.me.savingsAccount.id));
+    return await this.graphQLRequest<IPaymentRequest>(generatePixQr(amount, transactionId, message, pixKey, this.me.savingsAccount.id));
   }
 
   async getContactAccounts(contactID: string) {
-    return await this.graphQLRequest(getContactAccounts(contactID));
+    return await this.graphQLRequest<IContactAccountList>(getContactAccounts(contactID));
   }
 
   async getContacts() {
-    return await this.graphQLRequest(getContacts());
+    return await this.graphQLRequest<IContact[]>(getContacts());
   }
 
-  async getPhoneRechargeDetails(phoneRechargeRequestId: string) {
+  async getPhoneRechargeDetails(phoneRechargeRequestId: string) { // TODO: add return type
     return await this.graphQLRequest(getPhoneRechargeDetails(phoneRechargeRequestId));
   }
 
   async getPixAliases() {
-    return await this.graphQLRequest(getPixAliases());
+    return await this.graphQLRequest<IPixAlias[]>(getPixAliases());
   }
 
   async getTransferInDetails(id: string) {
@@ -206,33 +208,32 @@ export default class NubankTS implements INubankTS {
   }
 
   async rawTransferOut(bankAccountId: string, amount: number, bearerToken: string) {
-    return await this.graphQLRequest(transferOut(bankAccountId, amount), bearerToken);
+    return await this.graphQLRequest<ITransferOutRequestSuccess>(transferOut(bankAccountId, amount), bearerToken);
   }
 
   async transferOutInit(bankAccountId: string, amount: number) {
     try {
       await this.graphQLRequest(transferOutInit(bankAccountId, amount));
     } catch (error) {
-      return error.response;
+      return parseWwwAuthHeader<ITransferAuthProof>(error.response.headers['www-authenticate']);
     }
   }
 
   async transferOutPix(account: string, value: number, cardPassword: string) {
     if(!this.me) await this.loadMe();
-    let response = await this.transferOutInit(account, value);
-    const proof = parseWwwAuthHeader<ITransferAuthProof>(response.headers['www-authenticate']);
+    const proof = await this.transferOutInit(account, value);
 
     if(!proof.verifyPinProof || !proof.location) throw new Error('Certificate pending validation');
 
-    response = await this.NubankPostRequest(proof.location, {
+    const response = await this.NubankPostRequest(proof.location, {
       acl: [],
       input: cardPassword,
       proof: proof.verifyPinProof
     });
   
     const bearerToken = response.data['access_token'];
-    response = await this.rawTransferOut(account, value, bearerToken);
+    const transferOutResponse = await this.rawTransferOut(account, value, bearerToken);
   
-    return response.data;
+    return transferOutResponse.data || transferOutResponse.error;
   }
 }

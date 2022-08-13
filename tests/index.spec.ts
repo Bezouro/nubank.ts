@@ -263,7 +263,10 @@ describe('Nubank.TS', () => {
       const transferInitResponse = await nubank.transferOutInit('11999999999', 1);
       
       expect(axios.request).toHaveBeenLastCalledWith(getGQLDefaultRequestParams(query));
-      expect(transferInitResponse).toBe(response);
+      expect(transferInitResponse).toEqual({
+        location: 'http://not-a-real-server.com/api',
+        verifyPinProof: 'something',
+      });
     });
   });
 
@@ -271,7 +274,7 @@ describe('Nubank.TS', () => {
     it('execute query', async () => {
       const query = transferOut('11999999999', 1);
       
-      jest.spyOn(nubank, 'transferOutInit').mockResolvedValueOnce({ headers: { 'www-authenticate': 'verify-pin proof="something", location="http://not-a-real-server.com/api"' } });
+      axios.request.mockRejectedValueOnce({ response: { headers: { 'www-authenticate': 'verify-pin proof="something", location="http://not-a-real-server.com/api"' } } });
       axios.request.mockResolvedValueOnce( { data: { access_token: 'fake-token' } } );
       axios.request.mockResolvedValueOnce( mockGraphQLResponse(query, { batatinhaFrita: 123 }) );
       await nubank.transferOutPix('11999999999', 1, 'not-a-real-password');
@@ -282,7 +285,7 @@ describe('Nubank.TS', () => {
     it('nubank.ts doesnt have details of current user account, so it will call loadMe', async () => {
       const query = transferOut('11999999999', 1);
       
-      jest.spyOn(nubank, 'transferOutInit').mockResolvedValueOnce({ headers: { 'www-authenticate': 'verify-pin proof="something", location="http://not-a-real-server.com/api"' } });
+      axios.request.mockRejectedValueOnce({ response: { headers: { 'www-authenticate': 'verify-pin proof="something", location="http://not-a-real-server.com/api"' } } });
       axios.request.mockResolvedValueOnce( { data: { access_token: 'fake-token' } } );
       axios.request.mockResolvedValueOnce( mockGraphQLResponse(query, { batatinhaFrita: 123 }) );
       nubank.me = undefined as unknown as IAccountOwner;
@@ -293,7 +296,7 @@ describe('Nubank.TS', () => {
     });
 
     it('untrusted certificate should fail', async () => {
-      jest.spyOn(nubank, 'transferOutInit').mockResolvedValueOnce({ headers: { 'www-authenticate': 'certificate-pending-validation url="http://not-a-real-server.com/api"' } });
+      axios.request.mockRejectedValueOnce({ response: { headers: { 'www-authenticate': 'certificate-pending-validation url="http://not-a-real-server.com/api"' } } });
       const result = nubank.transferOutPix('11999999999', 1, 'not-a-real-password');
       
       await expect(result).rejects.toThrow('Certificate pending validation');
