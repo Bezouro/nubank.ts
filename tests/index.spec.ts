@@ -296,7 +296,7 @@ describe('Nubank.TS', () => {
       jest.spyOn(nubank, 'transferOutInit').mockResolvedValueOnce({ headers: { 'www-authenticate': 'certificate-pending-validation url="http://not-a-real-server.com/api"' } });
       const result = nubank.transferOutPix('11999999999', 1, 'not-a-real-password');
       
-      await expect(result).rejects.toThrow('Certificate pending validationn');
+      await expect(result).rejects.toThrow('Certificate pending validation');
     });
   });
 
