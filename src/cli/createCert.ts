@@ -34,7 +34,6 @@ export default async function run() {
     console.log('Starting Nubank.TS certificate creation...');
 
     const discovery = new Discovery(client);
-    await discovery.updateProxyUrls();
     const cpf = await prompt('CPF (only numbers): ');
     const password = await prompt('Password (same used in app): ');
 
