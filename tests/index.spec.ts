@@ -34,6 +34,8 @@ interface IAccountOwner {
   }
 }
 
+const MOCKED_MICROSERVICE_URL = 'https://prod-s0-microservice.nubank.com.br/api/route';
+
 function mockGraphQLResponse(query: INubankQueryObject, data: unknown) {
   let mockedResponse = data;
   const path = ['data', 'data', ...query.path.split('.')];
@@ -58,7 +60,7 @@ function getGQLDefaultRequestParams(query: INubankQueryObject){
       'accept': 'application/json'
     },
     'method': 'POST',
-    'url': 'https://prod-s4-stormshield.nubank.com.br/api/query'
+    'url': MOCKED_MICROSERVICE_URL
   };
 }
 
@@ -107,7 +109,7 @@ describe('Nubank.TS', () => {
       request: Axios.request as unknown as jest.SpyInstance,
     };
     axios.create.mockReturnThis();
-    axios.request.mockResolvedValueOnce( { data: { access_token: 'fake-token' } });
+    axios.request.mockResolvedValueOnce( { data: { access_token: 'fake-token', _links: { savings_account: { href: MOCKED_MICROSERVICE_URL } } } });
     axios.request.mockResolvedValueOnce( { data: { data:{ viewer: MOCKED_ACCOUNT_OWNER } } });
     nubank = new NubankTS(MOCKED_NU_USER, MOCKED_NU_PASSWORD, MOCKED_NU_CERTIFICATE);
   });

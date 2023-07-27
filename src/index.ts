@@ -64,8 +64,6 @@ interface ITransferAuthProof {
 
 export default class NubankTS implements INubankTS {
 
-  readonly NUBANK_TRANSFERAUTH_HOST = 'https://prod-s4-piv.nubank.com.br/';
-
   user: string;
   password: string;
   token: string;
@@ -73,6 +71,8 @@ export default class NubankTS implements INubankTS {
   client: AxiosInstance;
   discovery: Discovery;
   me: IAccountOwner;
+  savingsAccountUrl: string;
+  accountServer: number;
 
   constructor(user: string, password: string, certificate: Buffer) {
     this.user = user;
@@ -97,7 +97,7 @@ export default class NubankTS implements INubankTS {
   async getBearerToken() {
     if (!this.token) {
       if(!this.discovery.proxyListAppUrl) await this.discovery.updateProxyUrls();
-      const { data: { access_token } } = await this.client.request({
+      const data = await this.client.request({
         method: 'POST',
         url: this.discovery.getAppUrl('token'),
         headers: BASE_HEADERS,
@@ -109,6 +109,9 @@ export default class NubankTS implements INubankTS {
           password: this.password
         }
       });
+      const { data: { access_token } } = data;
+      this.savingsAccountUrl = data.data._links.savings_account.href;
+      this.accountServer = parseInt(this.savingsAccountUrl.split('prod-s')[1].split('-')[0]);
       this.token = `Bearer ${access_token}`;
     }
     return this.token;
@@ -120,7 +123,7 @@ export default class NubankTS implements INubankTS {
 
     const request = await this.client.request({
       method: 'POST',
-      url: 'https://prod-s4-stormshield.nubank.com.br/api/query',
+      url: this.savingsAccountUrl,
       headers: {
         ...BASE_HEADERS,
         accept: 'application/json',
