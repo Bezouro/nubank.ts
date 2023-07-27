@@ -1,6 +1,6 @@
 {
   "name": "nubank.ts",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Nubank api module for node.js",
   "readmeFilename": "README.md",
   "main": "dist/index.js",
